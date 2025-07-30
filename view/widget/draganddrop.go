@@ -16,19 +16,19 @@ var (
 	_             desktop.Cursorable = (*DragAndDropWidget)(nil)
 	hoverDuration                    = time.Millisecond * 300
 	hoverColor                       = color.NRGBA{R: 100, G: 100, B: 100, A: 150}
-	label                            = widget.NewLabel("Drop files here!")
+	label                            = widget.NewLabel("Drop files here or click on me!")
 )
 
 func (m *DragAndDropWidget) Cursor() desktop.Cursor {
 	return desktop.PointerCursor
 }
 
-func (w *DragAndDropWidget) MouseMoved(*desktop.MouseEvent) {}
+func (w *DragAndDropWidget) MouseMoved(e *desktop.MouseEvent) {}
 
-func (w *DragAndDropWidget) MouseIn(*desktop.MouseEvent) {
+func changeColor(w *DragAndDropWidget, from color.Color, to color.Color) {
 	canvas.NewColorRGBAAnimation(
-		color.Transparent,
-		hoverColor,
+		from,
+		to,
 		hoverDuration,
 		func(c color.Color) {
 			w.dropZone.FillColor = c
@@ -37,16 +37,12 @@ func (w *DragAndDropWidget) MouseIn(*desktop.MouseEvent) {
 	).Start()
 }
 
+func (w *DragAndDropWidget) MouseIn(*desktop.MouseEvent) {
+	changeColor(w, color.Transparent, hoverColor)
+}
+
 func (w *DragAndDropWidget) MouseOut() {
-	canvas.NewColorRGBAAnimation(
-		hoverColor,
-		color.Transparent,
-		hoverDuration,
-		func(c color.Color) {
-			w.dropZone.FillColor = c
-			w.dropZone.Refresh()
-		},
-	).Start()
+	changeColor(w, hoverColor, color.Transparent)
 }
 
 type DragAndDropWidget struct {
@@ -79,6 +75,7 @@ func NewDragAndDrop(parentWindow fyne.Window, onDrop func([]fyne.URI)) *DragAndD
 		onDrop:       onDrop,
 	}
 	d.ExtendBaseWidget(d)
+
 	return d
 }
 
@@ -102,26 +99,37 @@ func (w *DragAndDropWidget) Tapped(*fyne.PointEvent) {
 func (w *dragAndDropRenderer) Destroy() {}
 
 func (w *dragAndDropRenderer) Layout(size fyne.Size) {
-	dz := w.widget.dropZone
-	l := w.widget.label
+	dropzone := w.widget.dropZone
+	label := w.widget.label
 
-	dsz := dz.Size()
-	lsz := l.MinSize()
+	dw := dropzone.Size().Width
+	dh := dropzone.Size().Height
 
-	l.Move(fyne.NewPos(
-		(dsz.Width-lsz.Width)/2,
-		(dsz.Height-lsz.Height)/2,
+	lw := label.MinSize().Width
+	lh := label.MinSize().Height
+
+	label.Move(fyne.NewPos(
+		(dw-lw)/2,
+		(dh-lh)/2,
 	))
 
-	w.widget.parentWindow.SetOnDropped(func(pos fyne.Position, u []fyne.URI) {
-		w.widget.onDrop(u)
+	w.widget.parentWindow.SetOnDropped(func(p fyne.Position, uris []fyne.URI) {
+		wx := w.widget.Position().X
+		wy := w.widget.Position().Y
+
+		x := p.X >= wx && p.X <= wx+dw
+		y := p.Y >= wy && p.Y <= wy+dw
+
+		if x && y {
+			w.widget.onDrop(uris)
+		}
 	})
 
-	dz.Resize(size)
+	dropzone.Resize(size)
 }
 
 func (w *dragAndDropRenderer) MinSize() fyne.Size {
-	return fyne.NewSize(400, 200)
+	return fyne.NewSize(300, 100)
 }
 
 func (w *dragAndDropRenderer) Objects() []fyne.CanvasObject {
