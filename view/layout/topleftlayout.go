@@ -12,7 +12,9 @@ type TopLeftLayout struct{}
 
 func (l *TopLeftLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	for _, obj := range objects {
-		obj.Resize(obj.MinSize())
+		if obj.Size().IsZero() {
+			obj.Resize(obj.MinSize())
+		}
 
 		if _, isDnD := obj.(*widget.DragAndDropWidget); isDnD {
 			obj.Move(fyne.NewPos(
@@ -23,7 +25,9 @@ func (l *TopLeftLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 			continue
 		}
 
-		obj.Move(fyne.NewPos(0, 0))
+		if obj.Position().IsZero() {
+			obj.Move(fyne.NewPos(0, 0))
+		}
 	}
 }
 
