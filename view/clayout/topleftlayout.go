@@ -1,7 +1,7 @@
-package layout
+package clayout
 
 import (
-	"converter/view/widget"
+	"converter/view/cwidget"
 
 	"fyne.io/fyne/v2"
 )
@@ -16,7 +16,7 @@ func (l *TopLeftLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 			obj.Resize(obj.MinSize())
 		}
 
-		if _, isDnD := obj.(*widget.DragAndDropWidget); isDnD {
+		if _, isDnD := obj.(*cwidget.DragAndDropWidget); isDnD {
 			obj.Move(fyne.NewPos(
 				size.Width-obj.MinSize().Width-padding,
 				size.Height-obj.MinSize().Height-padding,
